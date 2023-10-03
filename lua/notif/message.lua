@@ -48,7 +48,6 @@ end
 
 M.message_exists = function(lines, title)
   for _, message in pairs(M.messages) do
-    vim.print(message.text, lines)
     if message.text == lines and message.title == title then
       return message
     end
