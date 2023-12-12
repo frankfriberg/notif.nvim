@@ -3,20 +3,20 @@ M = {}
 
 M.positions = {
   ["bottom-left"] = {
-    row = vim.o.lines - vim.o.cmdheight - 1,
+    row = function() return vim.o.lines - vim.o.cmdheight - 1 end,
     col = 4,
     anchor = "SW",
     top_down = false
   },
   ["bottom-center"] = {
-    row = vim.o.lines - vim.o.cmdheight - 1,
-    col = (vim.o.columns - config.max_width) / 2,
+    row = function() return vim.o.lines - vim.o.cmdheight - 1 end,
+    col = function() return (vim.o.columns - config.max_width) / 2 end,
     anchor = "SW",
     top_down = false
   },
   ["bottom-right"] = {
-    row = vim.o.lines - vim.o.cmdheight - 1,
-    col = vim.o.columns,
+    row = function() return vim.o.lines - vim.o.cmdheight - 1 end,
+    col = function() return vim.o.columns end,
     anchor = "SE",
     top_down = false
   },
@@ -28,13 +28,13 @@ M.positions = {
   },
   ["top-center"] = {
     row = 0,
-    col = (vim.o.columns - config.max_width) / 2,
+    col = function() return (vim.o.columns - config.max_width) / 2 end,
     anchor = "NW",
     top_down = true
   },
   ["top-right"] = {
     row = 0,
-    col = vim.o.columns - config.max_width - 4,
+    col = function() return vim.o.columns - config.max_width - 4 end,
     anchor = "NE",
     top_down = true
   }
@@ -84,6 +84,14 @@ M.split_string_into_lines = function(longString)
   end
   table.insert(lines, currentLine)
   return lines
+end
+
+M.get_row = function()
+  return M.positions[config.win_options.position].row()
+end
+
+M.get_col = function()
+  return M.positions[config.win_options.position].col()
 end
 
 return M

@@ -11,8 +11,8 @@ M.create_window = function(lines, title, icon, level)
     anchor = util.positions[config.win_options.position].anchor,
     width = config.max_width,
     height = #lines,
-    row = util.positions[config.win_options.position].row,
-    col = util.positions[config.win_options.position].col,
+    row = util.get_row(),
+    col = util.get_col(),
     style = 'minimal',
     border = config.win_options.border,
     title = win_title,
@@ -21,6 +21,7 @@ M.create_window = function(lines, title, icon, level)
   })
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(buf, "filetype", "NotifMessage")
   vim.api.nvim_win_set_hl_ns(win, config.ns_id)
   vim.api.nvim_win_set_option(
     win,
@@ -35,11 +36,13 @@ M.create_window = function(lines, title, icon, level)
   return win, buf
 end
 
-M.set_win_position = function(message, new_row)
+M.set_win_position = function(message, new_row, new_col)
+  if not vim.api.nvim_win_is_valid(message.win) then return end
+
   vim.api.nvim_win_set_config(message.win, {
     relative = config.win_options.relative,
     row = new_row,
-    col = message.col,
+    col = new_col or message.col,
   })
 
   message.row = new_row
