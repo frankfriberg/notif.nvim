@@ -1,6 +1,7 @@
 local message = require("notif.message")
 local config = require("notif.config")
 local M = {}
+M.lsp_history = {}
 
 local new_task = function(token, client)
   return {
@@ -55,7 +56,7 @@ M.add_lsp_progress = function()
       progress.message = progress.title
     end
 
-    message.add_message(
+    local created = message.add_message(
       progress.message,
       client.name,
       config.lsp.icon,
@@ -63,6 +64,8 @@ M.add_lsp_progress = function()
       token,
       10000
     )
+
+    table.insert(M.lsp_history, created)
   end
 end
 
