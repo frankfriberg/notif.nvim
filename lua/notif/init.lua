@@ -3,15 +3,14 @@ local lsp = require("notif.lsp")
 local message = require("notif.message")
 local M = {}
 
-local update = function(user_config)
-  vim.tbl_deep_extend("force", config, user_config or {})
-  return config
-end
-
-
 M.notify = function(text, level, opts)
   opts = opts or {}
-  level = level or vim.log.levels.INFO
+
+  if type(level) == "string" then
+    level = vim.log.levels[level:upper()]
+  else
+    level = level or vim.log.levels.INFO
+  end
 
   if level >= config.min_level then
     message.add_message(text, opts.title, opts.icon, level)
@@ -19,7 +18,7 @@ M.notify = function(text, level, opts)
 end
 
 M.setup = function(user_config)
-  config = update(user_config)
+  config = vim.tbl_deep_extend("force", config, user_config or {})
 
   vim.notify = M.notify
 
