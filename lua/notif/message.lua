@@ -25,11 +25,15 @@ end
 M.remove_message = function(id)
   local win = M.messages[id].win
   M.unshift_messages(M.messages[id].height, id)
-  vim.api.nvim_win_close(win, true)
+  if vim.api.nvim_win_is_valid(win) then
+    vim.api.nvim_win_close(win, true)
+  end
   M.messages[id] = nil
 end
 
 M.update_message = function(lines, message)
+  if not vim.api.nvim_win_is_valid(message.win) then return end
+
   vim.api.nvim_buf_set_lines(message.buf, 0, -1, false, lines)
   message.text = lines
 end
@@ -72,8 +76,8 @@ M.add_message = function(text, title, icon, log_level, token, lifetime)
     level = level,
     title = title,
     text = lines,
-    row = util.positions[config.win_options.position].row,
-    col = util.positions[config.win_options.position].col,
+    row = util.get_row(),
+    col = util.get_col(),
     token = token
   }
 
@@ -93,5 +97,15 @@ M.replay_messages = function()
     M.add_message(message.text, message.title, message.level)
   end
 end
+
+local autogroup = vim.api.nvim_create_augroup('notif', { clear = true })
+vim.api.nvim_create_autocmd("VimResized", {
+  group = autogroup,
+  callback = function()
+    for _, message in pairs(M.messages) do
+      window.set_win_position(message, util.get_row(), util.get_col())
+    end
+  end
+})
 
 return M
