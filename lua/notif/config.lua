@@ -29,6 +29,7 @@ local config = {
     border = "rounded"
   },
   lsp = {
+    icon = "󰀴",
     progress = {
       enable = true,
     },
