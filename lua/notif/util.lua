@@ -1,97 +1,138 @@
-local config = require("notif.config")
-M = {}
+local Util = {}
 
-M.positions = {
-  ["bottom-left"] = {
-    row = function() return vim.o.lines - vim.o.cmdheight - 1 end,
-    col = 4,
-    anchor = "SW",
-    top_down = false
-  },
-  ["bottom-center"] = {
-    row = function() return vim.o.lines - vim.o.cmdheight - 1 end,
-    col = function() return (vim.o.columns - config.max_width) / 2 end,
-    anchor = "SW",
-    top_down = false
-  },
-  ["bottom-right"] = {
-    row = function() return vim.o.lines - vim.o.cmdheight - 1 end,
-    col = function() return vim.o.columns end,
-    anchor = "SE",
-    top_down = false
-  },
-  ["top-left"] = {
-    row = 0,
-    col = 4,
-    anchor = "NW",
-    top_down = true
-  },
-  ["top-center"] = {
-    row = 0,
-    col = function() return (vim.o.columns - config.max_width) / 2 end,
-    anchor = "NW",
-    top_down = true
-  },
-  ["top-right"] = {
-    row = 0,
-    col = function() return vim.o.columns - config.max_width - 4 end,
-    anchor = "NE",
-    top_down = true
-  }
+local get_bottom_position = function(_, margin_bottom)
+	return vim.o.lines - vim.o.cmdheight - margin_bottom
+end
+
+local get_top_position = function(margin_top, _)
+	return 0 + margin_top
+end
+
+local get_left_position = function(_, margin_left)
+	return 0 + margin_left
+end
+
+local get_right_position = function(_, margin_right)
+	return vim.o.columns - margin_right
+end
+
+local get_center_position = function()
+	return vim.o.columns / 2
+end
+
+Util.positions = {
+	["bottom-left"] = {
+		row = get_bottom_position,
+		col = get_left_position,
+		anchor = "SW",
+		top_down = false,
+	},
+	["bottom-center"] = {
+		row = get_bottom_position,
+		col = get_center_position,
+		anchor = "SW",
+		top_down = false,
+	},
+	["bottom-right"] = {
+		row = get_bottom_position,
+		col = get_right_position,
+		anchor = "SE",
+		top_down = false,
+	},
+	["top-left"] = {
+		row = get_top_position,
+		col = get_left_position,
+		anchor = "NW",
+		top_down = true,
+	},
+	["top-center"] = {
+		row = get_top_position,
+		col = get_center_position,
+		anchor = "NW",
+		top_down = true,
+	},
+	["top-right"] = {
+		row = get_top_position,
+		col = get_right_position,
+		anchor = "NE",
+		top_down = true,
+	},
 }
 
-M.levels = {
-  [0] = {
-    name = 'TRACE',
-    color = config.colors.trace,
-    icon = config.icons.trace,
-  },
-  [1] = {
-    name = 'DEBUG',
-    color = config.colors.debug,
-    icon = config.icons.debug,
-  },
-  [2] = {
-    name = 'INFO',
-    color = config.colors.info,
-    icon = config.icons.info,
-  },
-  [3] = {
-    name = 'WARN',
-    color = config.colors.warn,
-    icon = config.icons.warn,
-  },
-  [4] = {
-    name = 'ERROR',
-    color = config.colors.error,
-    icon = config.icons.error,
-  },
-}
-
-M.adjustment = M.positions[config.win_options.position].top_down and 1 or -1
-
-M.split_string_into_lines = function(longString)
-  local max_width = config.max_width
-  local lines = {}
-  local currentLine = ""
-  for word in longString:gmatch("%S+") do
-    if string.len(currentLine) + string.len(word) + 2 <= max_width then
-      currentLine = currentLine .. " " .. word
-    else
-      table.insert(lines, currentLine)
-      currentLine = " " .. word
-    end
-  end
-  table.insert(lines, currentLine)
-  return lines
+Util.levels = function(level)
+	local config = require("notif.config").get()
+	if level == 0 then
+		return {
+			name = "TRACE",
+			color = config.colors.trace,
+			icon = config.icons.trace,
+		}
+	elseif level == 1 then
+		return {
+			name = "DEBUG",
+			color = config.colors.debug,
+			icon = config.icons.debug,
+		}
+	elseif level == 2 then
+		return {
+			name = "INFO",
+			color = config.colors.info,
+			icon = config.icons.info,
+		}
+	elseif level == 3 then
+		return {
+			name = "WARN",
+			color = config.colors.warn,
+			icon = config.icons.warn,
+		}
+	elseif level == 4 then
+		return {
+			name = "ERROR",
+			color = config.colors.error,
+			icon = config.icons.error,
+		}
+	end
 end
 
-M.get_row = function()
-  return M.positions[config.win_options.position].row()
+Util.direction = function()
+	local config = require("notif.config").get()
+	return Util.positions[config.win_options.position].top_down and 1 or -1
 end
 
-M.get_col = function()
-  return M.positions[config.win_options.position].col()
+Util.split_string_into_lines = function(long_string, max_width, border)
+	local borders = border and 2 or 0
+	local lines = {}
+	local padding = " "
+	local current_line = ""
+
+	local function is_word_fitting(word)
+		local line_length_with_word = current_line:len() + word:len() + borders
+		return line_length_with_word <= max_width
+	end
+
+	local function add_line_to_result()
+		table.insert(lines, current_line .. padding)
+	end
+
+	for word in long_string:gmatch("%S+") do
+		if is_word_fitting(word) then
+			current_line = current_line .. padding .. word
+		else
+			add_line_to_result()
+			current_line = padding .. word
+		end
+	end
+
+	add_line_to_result()
+	return lines
 end
 
-return M
+Util.get_row_and_col = function()
+	local config = require("notif.config").get()
+	local margin = config.win_options.margin
+
+	return Util.positions[config.win_options.position].row(margin.top, margin.bottom),
+		Util.positions[config.win_options.position].col(margin.left, margin.right)
+end
+
+return Util
